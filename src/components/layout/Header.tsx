@@ -44,15 +44,12 @@ export const Header: React.FC<HeaderProps> = ({ selectedMonth, onMonthChange }) 
 
   const handleSignOut = async () => {
     try {
-      const { error } = await signOut();
-      if (error) {
-        toast.error(error.message);
-      } else {
-        toast.success('Signed out successfully');
-        navigate('/login');
-      }
+      await signOut();
+      toast.success('Signed out successfully');
     } catch {
       toast.error('An unexpected error occurred during logout');
+    } finally {
+      navigate('/login');
     }
   };
 

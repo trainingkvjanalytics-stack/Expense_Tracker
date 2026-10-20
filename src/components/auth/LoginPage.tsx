@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Wallet, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Wallet, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,10 +25,11 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export const LoginPage: React.FC = () => {
-  const { signIn } = useAuth();
+  const { signIn, signInWithDemo } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const {
     register,
@@ -44,16 +45,26 @@ export const LoginPage: React.FC = () => {
 
   const onSubmit = async (values: LoginFormValues) => {
     setIsSubmitting(true);
+    setFormError(null);
     try {
       const { error } = await signIn(values.email, values.password);
       if (error) {
-        toast.error(error.message || 'Failed to sign in. Please check your credentials.');
+        let msg = error.message || 'Failed to sign in. Please check your credentials.';
+        if (error.message.includes('Invalid login credentials')) {
+          msg = 'Invalid email or password. Please check your credentials or use the Demo Account.';
+        } else if (error.message.includes('Email not confirmed')) {
+          msg = 'Email not confirmed yet. Please verify your email inbox or explore with Demo Account.';
+        }
+        setFormError(msg);
+        toast.error(msg);
       } else {
         toast.success('Welcome back!');
         navigate('/');
       }
     } catch {
-      toast.error('An unexpected error occurred during sign in.');
+      const msg = 'An unexpected error occurred during sign in.';
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -133,6 +144,13 @@ export const LoginPage: React.FC = () => {
             </div>
           </CardContent>
 
+          {formError && (
+            <div className="mx-6 mb-3 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive font-medium flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
+
           <CardFooter className="flex flex-col space-y-4 pt-2">
             <Button
               type="submit"
@@ -152,12 +170,12 @@ export const LoginPage: React.FC = () => {
             <Button
               type="button"
               variant="outline"
-              className="w-full h-10 font-medium border-dashed hover:border-primary hover:text-primary transition-colors"
+              className="w-full h-10 font-medium border-dashed hover:border-primary hover:text-primary transition-colors cursor-pointer"
               onClick={async () => {
                 setIsSubmitting(true);
                 try {
-                  await signIn('demo@mymoneytracker.app', 'demo123');
-                  toast.success('Signed in as Demo User');
+                  await signInWithDemo();
+                  toast.success('Welcome! Exploring as Demo User');
                   navigate('/');
                 } catch {
                   toast.error('Failed to start demo session');

@@ -152,15 +152,12 @@ export const SettingsPage: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
-      const { error } = await signOut();
-      if (error) {
-        toast.error(error.message);
-      } else {
-        toast.success('Signed out successfully');
-        navigate('/login');
-      }
+      await signOut();
+      toast.success('Signed out successfully');
     } catch {
       toast.error('An error occurred during logout');
+    } finally {
+      navigate('/login');
     }
   };
 

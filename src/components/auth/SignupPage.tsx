@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Wallet, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
+import { Wallet, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +41,7 @@ export const SignupPage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const {
     register,
@@ -58,16 +59,29 @@ export const SignupPage: React.FC = () => {
 
   const onSubmit = async (values: SignupFormValues) => {
     setIsSubmitting(true);
+    setFormError(null);
     try {
-      const { error } = await signUp(values.email, values.password, values.fullName);
+      const { session, error } = await signUp(values.email, values.password, values.fullName);
       if (error) {
-        toast.error(error.message || 'Failed to create account.');
+        let msg = error.message || 'Failed to create account.';
+        if (error.message.toLowerCase().includes('rate limit')) {
+          msg = 'Supabase email rate limit reached. Please explore with the Demo Account or disable email confirmation in Supabase Dashboard (Auth > Providers > Email).';
+        } else if (error.message.toLowerCase().includes('invalid')) {
+          msg = 'Please use a valid email address with a real domain.';
+        }
+        setFormError(msg);
+        toast.error(msg);
+      } else if (session) {
+        toast.success('Account created and signed in successfully!');
+        navigate('/');
       } else {
         setSignupSuccess(true);
-        toast.success('Account created successfully! Please verify your email.');
+        toast.success('Account created! Please check your inbox to confirm your email.');
       }
     } catch {
-      toast.error('An unexpected error occurred during sign up.');
+      const msg = 'An unexpected error occurred during sign up.';
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -214,6 +228,13 @@ export const SignupPage: React.FC = () => {
               )}
             </div>
           </CardContent>
+
+          {formError && (
+            <div className="mx-6 mb-3 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive font-medium flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
 
           <CardFooter className="flex flex-col space-y-4 pt-2">
             <Button
