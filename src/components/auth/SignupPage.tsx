@@ -65,7 +65,7 @@ export const SignupPage: React.FC = () => {
       if (error) {
         let msg = error.message || 'Failed to create account.';
         if (error.message.toLowerCase().includes('rate limit')) {
-          msg = 'Supabase email rate limit reached. Please explore with the Demo Account or disable email confirmation in Supabase Dashboard (Auth > Providers > Email).';
+          msg = 'Supabase email rate limit reached. Please wait a moment or disable email confirmation in Supabase Dashboard (Auth > Providers > Email).';
         } else if (error.message.toLowerCase().includes('invalid')) {
           msg = 'Please use a valid email address with a real domain.';
         }

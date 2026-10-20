@@ -1,15 +1,12 @@
 import React, { createContext, useContext, useEffect, useState, useMemo, type ReactNode } from 'react';
 import type { User, Session, AuthError } from '@supabase/supabase-js';
-import { supabase, realSupabase, isSupabaseConfigured, isDemoMode, resetDemoDatabase } from '@/lib/supabase';
-import { mockSupabase } from '@/lib/mockSupabase';
+import { supabase } from '@/lib/supabase';
 
 export interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   error: string | null;
-  isDemo: boolean;
-  signInWithDemo: () => Promise<void>;
   signUp: (
     email: string,
     password: string,
@@ -35,38 +32,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isDemo, setIsDemo] = useState<boolean>(() => isDemoMode());
 
   useEffect(() => {
     let isMounted = true;
 
-    // Get initial session
     const initializeAuth = async () => {
       try {
-        if (isDemoMode()) {
-          const { data } = await mockSupabase.auth.getSession();
-          if (isMounted) {
-            setSession(data.session as any);
-            setUser((data.session?.user as any) ?? null);
-            setIsDemo(true);
-          }
-          return;
-        }
-
-        const client = isSupabaseConfigured && realSupabase ? realSupabase : supabase;
-        const { data, error: sessionError } = await client.auth.getSession();
+        const { data, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) {
           throw sessionError;
         }
         if (isMounted) {
           setSession(data.session);
           setUser(data.session?.user ?? null);
-          setIsDemo(false);
         }
       } catch (err: unknown) {
         if (isMounted) {
           const authErr = err as AuthError;
-          setError(authErr.message || 'Failed to get current session');
+          setError(authErr.message || 'Failed to get session');
           setSession(null);
           setUser(null);
         }
@@ -79,12 +62,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     initializeAuth();
 
-    // Listen for auth state changes from Supabase client
-    const client = isSupabaseConfigured && realSupabase ? realSupabase : supabase;
     const {
       data: { subscription },
-    } = client.auth.onAuthStateChange((_event: unknown, currentSession: any) => {
-      if (isMounted && !isDemoMode()) {
+    } = supabase.auth.onAuthStateChange((_event: unknown, currentSession: any) => {
+      if (isMounted) {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setLoading(false);
@@ -97,37 +78,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
-  const signInWithDemo = async () => {
+  const signUp = async (email: string, password: string, fullName?: string) => {
     setError(null);
-    localStorage.setItem('my_money_tracker_demo_session', 'true');
-    setIsDemo(true);
-
-    // Seed mock database if not already present
-    if (!localStorage.getItem('my_money_tracker_accounts')) {
-      resetDemoDatabase();
-    }
-
-    const { data } = await mockSupabase.auth.signInWithPassword({
-      email: 'demo@mymoneytracker.app',
-      password: 'demo',
-    });
-
-    setUser(data.user as any);
-    setSession(data.session as any);
-  };
-
-  const signUp = async (
-    email: string,
-    password: string,
-    fullName?: string
-  ) => {
-    setError(null);
-    localStorage.removeItem('my_money_tracker_demo_session');
-    setIsDemo(false);
-
     try {
-      const client = isSupabaseConfigured && realSupabase ? realSupabase : supabase;
-      const { data, error: signUpError } = await client.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -157,24 +111,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signIn = async (email: string, password: string) => {
     setError(null);
-
-    // If demo user is requested, immediately switch to demo mode
-    if (email.trim().toLowerCase() === 'demo@mymoneytracker.app') {
-      await signInWithDemo();
-      return {
-        user: { id: '00000000-0000-0000-0000-000000000001', email: 'demo@mymoneytracker.app' } as any,
-        session: { access_token: 'demo' } as any,
-        error: null,
-      };
-    }
-
-    // Normal Supabase sign-in
-    localStorage.removeItem('my_money_tracker_demo_session');
-    setIsDemo(false);
-
     try {
-      const client = isSupabaseConfigured && realSupabase ? realSupabase : supabase;
-      const { data, error: signInError } = await client.auth.signInWithPassword({
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -197,19 +135,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async () => {
     setError(null);
     try {
-      if (!isDemoMode()) {
-        const client = isSupabaseConfigured && realSupabase ? realSupabase : supabase;
-        await client.auth.signOut();
-      }
+      await supabase.auth.signOut();
     } catch (e) {
       console.warn('SignOut warning:', e);
     } finally {
-      // Unconditionally clear all user state and local storage
-      localStorage.removeItem('my_money_tracker_demo_session');
-      localStorage.removeItem('my_money_tracker_auth_user');
       setUser(null);
       setSession(null);
-      setIsDemo(false);
     }
     return { error: null };
   };
@@ -217,8 +148,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const resetPassword = async (email: string) => {
     setError(null);
     try {
-      const client = isSupabaseConfigured && realSupabase ? realSupabase : supabase;
-      const { error: resetError } = await client.auth.resetPasswordForEmail(email, {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
 
@@ -238,8 +168,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updatePassword = async (newPassword: string) => {
     setError(null);
     try {
-      const client = isSupabaseConfigured && realSupabase ? realSupabase : supabase;
-      const { error: updateError } = await client.auth.updateUser({
+      const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
       });
 
@@ -262,15 +191,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       session,
       loading,
       error,
-      isDemo,
-      signInWithDemo,
       signUp,
       signIn,
       signOut,
       resetPassword,
       updatePassword,
     }),
-    [user, session, loading, error, isDemo]
+    [user, session, loading, error]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

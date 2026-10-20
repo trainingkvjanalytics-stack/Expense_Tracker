@@ -25,7 +25,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export const LoginPage: React.FC = () => {
-  const { signIn, signInWithDemo } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,9 +51,9 @@ export const LoginPage: React.FC = () => {
       if (error) {
         let msg = error.message || 'Failed to sign in. Please check your credentials.';
         if (error.message.includes('Invalid login credentials')) {
-          msg = 'Invalid email or password. Please check your credentials or use the Demo Account.';
+          msg = 'Invalid email or password. Please check your credentials or create a new account.';
         } else if (error.message.includes('Email not confirmed')) {
-          msg = 'Email not confirmed yet. Please verify your email inbox or explore with Demo Account.';
+          msg = 'Email not confirmed yet. Please verify your email inbox before logging in.';
         }
         setFormError(msg);
         toast.error(msg);
@@ -165,27 +165,6 @@ export const LoginPage: React.FC = () => {
               ) : (
                 'Sign In'
               )}
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full h-10 font-medium border-dashed hover:border-primary hover:text-primary transition-colors cursor-pointer"
-              onClick={async () => {
-                setIsSubmitting(true);
-                try {
-                  await signInWithDemo();
-                  toast.success('Welcome! Exploring as Demo User');
-                  navigate('/');
-                } catch {
-                  toast.error('Failed to start demo session');
-                } finally {
-                  setIsSubmitting(false);
-                }
-              }}
-              disabled={isSubmitting}
-            >
-              🚀 Explore with Demo Account
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">

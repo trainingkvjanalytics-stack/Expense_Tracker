@@ -24,15 +24,12 @@ import {
   Landmark,
   Tags,
   CheckCircle2,
-  RefreshCw,
   Wallet,
   Shield,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { resetDemoDatabase } from '@/lib/mockSupabase';
-import { isSupabaseConfigured } from '@/lib/supabase';
 
 export const SettingsPage: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -142,14 +139,6 @@ export const SettingsPage: React.FC = () => {
     setExportModalOpen(false);
   };
 
-  const handleResetData = () => {
-    if (window.confirm('Reset all demo transactions, categories, and accounts to default sample state?')) {
-      resetDemoDatabase();
-      toast.success('Demo data restored successfully');
-      window.location.reload();
-    }
-  };
-
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -173,28 +162,20 @@ export const SettingsPage: React.FC = () => {
       {/* Backend Status Card */}
       <Card className="p-4 flex items-center justify-between border-border/80">
         <div className="flex items-center gap-3">
-          <div
-            className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-              isSupabaseConfigured
-                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-            }`}
-          >
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
             <Shield className="h-5 w-5" />
           </div>
           <div>
             <p className="text-sm font-semibold text-foreground">
-              {isSupabaseConfigured ? 'Supabase PostgreSQL Cloud Active' : 'Offline / Demo Storage Active'}
+              Supabase Authentication & Cloud Database Active
             </p>
             <p className="text-xs text-muted-foreground">
-              {isSupabaseConfigured
-                ? 'Connected with Row-Level Security policies & authenticated session.'
-                : 'Running on resilient local storage. Enter Supabase credentials in .env to connect.'}
+              Protected by PostgreSQL Row-Level Security (RLS). You only have access to your own personal financial data.
             </p>
           </div>
         </div>
-        <Badge variant={isSupabaseConfigured ? 'default' : 'secondary'}>
-          {isSupabaseConfigured ? 'Live Supabase' : 'Local Demo'}
+        <Badge variant="default" className="bg-emerald-600 hover:bg-emerald-700">
+          User Isolated
         </Badge>
       </Card>
 
@@ -256,11 +237,11 @@ export const SettingsPage: React.FC = () => {
             <CardTitle className="text-base font-semibold">Export & Data Management</CardTitle>
           </div>
           <CardDescription className="text-xs">
-            Download your financial records as CSV spreadsheets or restore demo defaults
+            Download your personal financial records as CSV spreadsheets
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-center justify-between py-2 border-b border-border/60">
+          <div className="flex items-center justify-between py-2">
             <div>
               <p className="text-sm font-medium">Export Financial Records</p>
               <p className="text-xs text-muted-foreground">
@@ -275,24 +256,6 @@ export const SettingsPage: React.FC = () => {
             >
               <Download className="h-4 w-4" />
               Export CSV
-            </Button>
-          </div>
-
-          <div className="flex items-center justify-between py-2">
-            <div>
-              <p className="text-sm font-medium">Reset Demo Data</p>
-              <p className="text-xs text-muted-foreground">
-                Restore sample accounts, transactions, investments, and loans
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleResetData}
-              className="gap-1.5 text-muted-foreground hover:text-foreground"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Reset Samples
             </Button>
           </div>
         </CardContent>
@@ -350,7 +313,7 @@ export const SettingsPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2">
             <span className="text-xs text-muted-foreground font-medium">Full Name</span>
             <span className="text-xs sm:text-sm font-semibold">
-              {user?.user_metadata?.full_name || 'Rahul Sharma'}
+              {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
             </span>
           </div>
         </CardContent>
