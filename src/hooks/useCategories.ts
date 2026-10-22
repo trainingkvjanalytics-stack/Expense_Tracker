@@ -43,11 +43,11 @@ export function useCategories(): UseCategoriesReturn {
     setError(null);
 
     try {
-      // Fetch categories (system categories + current user's custom categories)
+      // Fetch categories for current authenticated user
       const { data: catData, error: catError } = await supabase
         .from('categories')
         .select('*')
-        .or(`user_id.eq.${user.id},user_id.is.null,is_system.eq.true`)
+        .eq('user_id', user.id)
         .order('name', { ascending: true });
 
       if (catError) {
@@ -58,17 +58,27 @@ export function useCategories(): UseCategoriesReturn {
       const { data: subData, error: subError } = await supabase
         .from('subcategories')
         .select('*')
-        .or(`user_id.eq.${user.id},user_id.is.null`)
+        .eq('user_id', user.id)
         .order('name', { ascending: true });
 
       if (subError) {
         throw subError;
       }
 
-      setCategories(catData || []);
+      const mappedCategories: Category[] = (catData || []).map((c: any) => ({
+        ...c,
+        type: c.transaction_type || c.type,
+        is_system: Boolean(c.is_default || c.is_system),
+        is_default: Boolean(c.is_default || c.is_system),
+      }));
+
+      setCategories(mappedCategories);
       setSubcategories(subData || []);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch categories';
+      console.error('Failed to fetch categories:', err);
+      const message =
+        (err as any)?.message ||
+        (err instanceof Error ? err.message : 'Failed to fetch categories');
       setError(message);
       toast.error(message);
     } finally {
@@ -97,10 +107,13 @@ export function useCategories(): UseCategoriesReturn {
       }
 
       try {
-        const payload: CategoryInsert = {
-          ...data,
+        const payload: any = {
           user_id: user.id,
-          is_system: false,
+          name: data.name,
+          transaction_type: (data as any).transaction_type || data.type,
+          color: data.color || '#3b82f6',
+          icon: data.icon || 'tag',
+          is_default: false,
         };
 
         const { data: created, error: createError } = await supabase
@@ -115,9 +128,16 @@ export function useCategories(): UseCategoriesReturn {
 
         toast.success('Category created successfully');
         await fetchCategoriesAndSubcategories();
-        return created;
+        return {
+          ...created,
+          type: created.transaction_type || created.type,
+          is_system: Boolean(created.is_default),
+        };
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Failed to create category';
+        console.error('Failed to create category:', err);
+        const message =
+          (err as any)?.message ||
+          (err instanceof Error ? err.message : 'Failed to create category');
         toast.error(message);
         return null;
       }
@@ -135,14 +155,17 @@ export function useCategories(): UseCategoriesReturn {
       try {
         const target = categories.find((c) => c.id === id);
         if (target?.is_system) {
-          toast.error('System categories cannot be modified');
+          toast.error('Default system categories cannot be modified');
           return null;
         }
 
-        const updatePayload: CategoryUpdate = {
-          ...data,
-          updated_at: new Date().toISOString(),
-        };
+        const updatePayload: any = {};
+        if (data.name !== undefined) updatePayload.name = data.name;
+        if (data.type !== undefined || (data as any).transaction_type !== undefined) {
+          updatePayload.transaction_type = (data as any).transaction_type || data.type;
+        }
+        if (data.color !== undefined) updatePayload.color = data.color;
+        if (data.icon !== undefined) updatePayload.icon = data.icon;
 
         const { data: updated, error: updateError } = await supabase
           .from('categories')
@@ -158,9 +181,16 @@ export function useCategories(): UseCategoriesReturn {
 
         toast.success('Category updated successfully');
         await fetchCategoriesAndSubcategories();
-        return updated;
+        return {
+          ...updated,
+          type: updated.transaction_type || updated.type,
+          is_system: Boolean(updated.is_default),
+        };
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Failed to update category';
+        console.error('Failed to update category:', err);
+        const message =
+          (err as any)?.message ||
+          (err instanceof Error ? err.message : 'Failed to update category');
         toast.error(message);
         return null;
       }

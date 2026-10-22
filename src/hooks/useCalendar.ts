@@ -62,7 +62,7 @@ export function useCalendar(params: UseCalendarParams): UseCalendarReturn {
         .from('transactions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('type', 'expense')
+        .eq('transaction_type', 'expense')
         .gte('transaction_date', start)
         .lte('transaction_date', end);
 
@@ -70,7 +70,10 @@ export function useCalendar(params: UseCalendarParams): UseCalendarReturn {
         throw fetchError;
       }
 
-      const txns: Transaction[] = data || [];
+      const txns: Transaction[] = (data || []).map((t: any) => ({
+        ...t,
+        type: t.transaction_type || t.type,
+      }));
 
       // Calculate daily expense array
       const calculatedDaily = calculateDailyExpenses(txns, year, month);

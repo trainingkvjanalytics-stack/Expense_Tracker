@@ -10,7 +10,6 @@ import type {
   LentRecordUpdate,
   LentRepayment,
   PaymentMode,
-  TransactionInsert,
 } from '@/types/database';
 
 export interface LentRecordWithDetails extends LentRecord {
@@ -80,7 +79,7 @@ export function useLentMoney(
         .from('lent_records')
         .select('*')
         .eq('user_id', user.id)
-        .order('lent_date', { ascending: false });
+        .order('date_lent', { ascending: false });
 
       if (!includeRepaid) {
         query = query.neq('status', 'repaid');
@@ -110,7 +109,7 @@ export function useLentMoney(
         const itemRepayments = allRepayments.filter(
           (r: any) => r.lent_record_id === rec.id
         );
-        const originalAmount = Number(rec.amount) || 0;
+        const originalAmount = Number(rec.original_amount ?? rec.amount) || 0;
         const repaidAmount = Number(rec.amount_repaid) || 0;
         const outstanding =
           rec.outstanding_amount !== undefined && rec.outstanding_amount !== null
@@ -119,17 +118,27 @@ export function useLentMoney(
 
         return {
           ...rec,
+          borrower_name: rec.person_name || rec.borrower_name || '',
+          person_name: rec.person_name || rec.borrower_name || '',
           amount: originalAmount,
+          original_amount: originalAmount,
           amount_repaid: repaidAmount,
           outstanding_amount: outstanding,
+          remaining_amount: outstanding,
+          lent_date: rec.date_lent || rec.lent_date || new Date().toISOString().slice(0, 10),
+          date_lent: rec.date_lent || rec.lent_date || new Date().toISOString().slice(0, 10),
+          due_date: rec.expected_repayment_date || rec.due_date || new Date().toISOString().slice(0, 10),
+          expected_repayment_date: rec.expected_repayment_date || rec.due_date || new Date().toISOString().slice(0, 10),
           repayments: itemRepayments,
         };
       });
 
       setLentRecords(combined);
     } catch (err: unknown) {
+      console.error('Failed to fetch lent records:', err);
       const message =
-        err instanceof Error ? err.message : 'Failed to fetch lent records';
+        (err as any)?.message ||
+        (err instanceof Error ? err.message : 'Failed to fetch lent records');
       setError(message);
       toast.error(message);
     } finally {
@@ -155,15 +164,19 @@ export function useLentMoney(
       }
 
       try {
-        const principalAmount = Number(data.amount) || 0;
-        const lentPayload: LentRecordInsert = {
-          ...data,
+        const principalAmount = Number(data.amount || (data as any).original_amount) || 0;
+        const lentPayload: any = {
           user_id: user.id,
-          amount: principalAmount,
+          person_name: (data as any).person_name || data.borrower_name,
           original_amount: principalAmount,
           amount_repaid: 0,
           outstanding_amount: principalAmount,
+          date_lent: data.lent_date || (data as any).date_lent || format(new Date(), 'yyyy-MM-dd'),
+          expected_repayment_date: data.due_date || (data as any).expected_repayment_date || format(new Date(), 'yyyy-MM-dd'),
+          account_id: data.account_id || null,
+          payment_mode: data.payment_mode || 'upi',
           status: 'active',
+          notes: data.notes || null,
         };
 
         // 1. Insert lent record
@@ -177,42 +190,42 @@ export function useLentMoney(
           throw recordError;
         }
 
-        // 2. Insert transaction with type 'lent'
-        const txnPayload: TransactionInsert = {
+        // 2. Insert transaction with transaction_type 'lent'
+        const txnPayload: any = {
           user_id: user.id,
           account_id: data.account_id,
-          type: 'lent',
+          transaction_type: 'lent',
           amount: principalAmount,
           transaction_date:
-            data.lent_date || format(new Date(), 'yyyy-MM-dd'),
+            data.lent_date || (data as any).date_lent || format(new Date(), 'yyyy-MM-dd'),
           payment_mode: data.payment_mode || 'upi',
-          description: `Lent to ${data.borrower_name}`,
-          notes: data.notes,
+          description: `Lent to ${(data as any).person_name || data.borrower_name}`,
           related_lent_id: createdRecord.id,
         };
 
-        const { data: createdTxn, error: txnError } = await supabase
+        const { error: txnError } = await supabase
           .from('transactions')
-          .insert(txnPayload)
-          .select()
-          .single();
+          .insert(txnPayload);
 
         if (txnError) {
           console.error('Failed to create related transaction for lent record:', txnError);
-        } else if (createdTxn) {
-          // Link transaction ID back to lent record
-          await supabase
-            .from('lent_records')
-            .update({ transaction_id: createdTxn.id })
-            .eq('id', createdRecord.id);
         }
 
         toast.success('Lent record created successfully');
         await fetchLentRecords();
-        return createdRecord;
+        return {
+          ...createdRecord,
+          borrower_name: createdRecord.person_name || createdRecord.borrower_name,
+          amount: createdRecord.original_amount || createdRecord.amount,
+          remaining_amount: createdRecord.outstanding_amount || createdRecord.remaining_amount,
+          lent_date: createdRecord.date_lent || createdRecord.lent_date,
+          due_date: createdRecord.expected_repayment_date || createdRecord.due_date,
+        };
       } catch (err: unknown) {
+        console.error('Failed to create lent record:', err);
         const message =
-          err instanceof Error ? err.message : 'Failed to create lent record';
+          (err as any)?.message ||
+          (err instanceof Error ? err.message : 'Failed to create lent record');
         toast.error(message);
         return null;
       }
@@ -378,21 +391,18 @@ export function useLentMoney(
         const newStatus = newOutstanding <= 0 ? 'repaid' : 'active';
 
         // 1. Create repayment transaction
-        const { data: txn, error: txnError } = await supabase
+        const { error: txnError } = await supabase
           .from('transactions')
           .insert({
             user_id: user.id,
             account_id: destinationAccountId,
-            type: 'repayment',
+            transaction_type: 'repayment',
             amount,
             transaction_date: repaymentDate,
             payment_mode: paymentMode,
-            description: `Partial repayment from ${record.borrower_name}`,
-            notes,
+            description: `Partial repayment from ${record.borrower_name || (record as any).person_name}`,
             related_lent_id: lentRecordId,
-          })
-          .select()
-          .single();
+          });
 
         if (txnError) {
           throw txnError;
@@ -404,12 +414,11 @@ export function useLentMoney(
           .insert({
             user_id: user.id,
             lent_record_id: lentRecordId,
-            account_id: destinationAccountId,
+            destination_account_id: destinationAccountId,
             amount,
             repayment_date: repaymentDate,
-            payment_mode: paymentMode,
+            expected_remaining_date: expectedRemainingDate || null,
             notes: notes || 'Partial repayment',
-            transaction_id: txn?.id || null,
           });
 
         if (repError) {
@@ -417,7 +426,7 @@ export function useLentMoney(
         }
 
         // 3. Update lent_record
-        const updatePayload: LentRecordUpdate = {
+        const updatePayload: any = {
           amount_repaid: newRepaid,
           outstanding_amount: newOutstanding,
           status: newStatus,
@@ -425,7 +434,7 @@ export function useLentMoney(
         };
 
         if (expectedRemainingDate !== undefined) {
-          updatePayload.due_date = expectedRemainingDate;
+          updatePayload.expected_repayment_date = expectedRemainingDate;
         }
 
         const { error: updateError } = await supabase

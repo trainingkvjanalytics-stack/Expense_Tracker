@@ -95,11 +95,11 @@ export function useDashboard(params: UseDashboardParams): UseDashboardReturn {
       } else {
         const { data: accountsData } = await supabase
           .from('accounts')
-          .select('opening_balance')
+          .select('initial_balance, account_name, account_type')
           .eq('user_id', user.id);
 
         initialOpeningBalance = (accountsData || []).reduce(
-          (sum: number, acc: any) => sum + (Number(acc.opening_balance) || 0),
+          (sum: number, acc: any) => sum + (Number(acc.initial_balance ?? acc.opening_balance) || 0),
           0
         );
       }
@@ -116,7 +116,11 @@ export function useDashboard(params: UseDashboardParams): UseDashboardReturn {
         throw monthTxnsError;
       }
 
-      const monthTxns: Transaction[] = monthTxnsData || [];
+      const monthTxns: Transaction[] = ((monthTxnsData as any[]) || []).map((t) => ({
+        ...t,
+        type: t.transaction_type || t.type,
+        to_account_id: t.destination_account_id || t.to_account_id,
+      }));
 
       // 3. Fetch all transactions before the selected month to calculate opening balance
       const { data: prevTxnsData, error: prevTxnsError } = await supabase
@@ -129,7 +133,11 @@ export function useDashboard(params: UseDashboardParams): UseDashboardReturn {
         throw prevTxnsError;
       }
 
-      const prevTxns: Transaction[] = prevTxnsData || [];
+      const prevTxns: Transaction[] = ((prevTxnsData as any[]) || []).map((t) => ({
+        ...t,
+        type: t.transaction_type || t.type,
+        to_account_id: t.destination_account_id || t.to_account_id,
+      }));
 
       // Calculate opening balance
       let prevIncome = 0;
@@ -177,13 +185,17 @@ export function useDashboard(params: UseDashboardParams): UseDashboardReturn {
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
-        .or(`user_id.eq.${user.id},user_id.is.null,is_system.eq.true`);
+        .eq('user_id', user.id);
 
       if (categoriesError) {
         throw categoriesError;
       }
 
-      const categories: Category[] = categoriesData || [];
+      const categories: Category[] = ((categoriesData as any[]) || []).map((c) => ({
+        ...c,
+        type: c.transaction_type || c.type,
+        is_system: Boolean(c.is_default || c.is_system),
+      }));
 
       // Group categories and weeks
       const groupedCategories = groupExpensesByCategory(monthTxns, categories);
@@ -211,14 +223,24 @@ export function useDashboard(params: UseDashboardParams): UseDashboardReturn {
       }
 
       const formattedActivities: TransactionWithDetails[] = (
-        (recentRes.data as unknown as TransactionWithDetails[]) || []
+        (recentRes.data as unknown as any[]) || []
       ).map((item) => {
-        if (item.accounts) {
-          const accName = item.accounts.name || item.accounts.account_name || '';
-          item.accounts.name = accName;
-          item.accounts.account_name = accName;
-        }
-        return item;
+        const mappedAcc = item.accounts
+          ? {
+              ...item.accounts,
+              name: item.accounts.account_name || item.accounts.name || '',
+              account_name: item.accounts.account_name || item.accounts.name || '',
+              type: item.accounts.account_type || item.accounts.type,
+              opening_balance: Number(item.accounts.initial_balance ?? item.accounts.opening_balance ?? 0),
+            }
+          : undefined;
+
+        return {
+          ...item,
+          type: item.transaction_type || item.type,
+          to_account_id: item.destination_account_id || item.to_account_id,
+          accounts: mappedAcc,
+        };
       });
 
       setSummary({

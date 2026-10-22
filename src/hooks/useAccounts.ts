@@ -54,8 +54,18 @@ export function useAccounts(options?: UseAccountsOptions): UseAccountsReturn {
 
       const allAccounts = accountsData || [];
 
-      // Filter out archived accounts if includeArchived is false
-      const filteredAccounts = allAccounts.filter((acc: Account) => {
+      // Map accounts to include frontend expected field names and filter out archived
+      const filteredAccounts: Account[] = (allAccounts as any[]).map((acc) => ({
+        ...acc,
+        name: acc.account_name || acc.name || '',
+        account_name: acc.account_name || acc.name || '',
+        type: acc.account_type || acc.type || 'savings',
+        account_type: acc.account_type || acc.type || 'savings',
+        opening_balance: Number(acc.initial_balance ?? acc.opening_balance ?? 0),
+        initial_balance: Number(acc.initial_balance ?? acc.opening_balance ?? 0),
+        is_active: !acc.is_archived,
+        currency: acc.currency || 'INR',
+      })).filter((acc) => {
         if (includeArchived) return true;
         return acc.is_active !== false && !acc.is_archived;
       });
@@ -70,12 +80,16 @@ export function useAccounts(options?: UseAccountsOptions): UseAccountsReturn {
         throw txnsError;
       }
 
-      const txns = txnsData || [];
+      const txns = ((txnsData as any[]) || []).map((t) => ({
+        ...t,
+        type: t.transaction_type || t.type,
+        to_account_id: t.destination_account_id || t.to_account_id,
+      }));
 
       // 3. Compute dynamic balance for each account using calculateAccountBalance
       const balanceMap: Record<string, number> = {};
       const accountsWithBalance = filteredAccounts.map((account: Account) => {
-        const computedBalance = calculateAccountBalance(account, txns);
+        const computedBalance = calculateAccountBalance(account, txns as any);
         balanceMap[account.id] = computedBalance;
         return {
           ...account,
@@ -86,7 +100,10 @@ export function useAccounts(options?: UseAccountsOptions): UseAccountsReturn {
       setAccounts(accountsWithBalance);
       setBalances(balanceMap);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch accounts';
+      console.error('Failed to fetch accounts:', err);
+      const message =
+        (err as any)?.message ||
+        (err instanceof Error ? err.message : 'Failed to fetch accounts');
       setError(message);
       toast.error(message);
     } finally {
@@ -106,13 +123,14 @@ export function useAccounts(options?: UseAccountsOptions): UseAccountsReturn {
       }
 
       try {
-        const insertPayload: AccountInsert = {
-          ...data,
+        const insertPayload: any = {
           user_id: user.id,
-          opening_balance: Number(data.opening_balance) || 0,
-          current_balance: Number(data.opening_balance) || 0,
-          currency: data.currency || 'INR',
-          is_active: data.is_active ?? true,
+          account_name: (data as any).account_name || data.name,
+          bank_name: data.bank_name || null,
+          account_type: (data as any).account_type || data.type || 'savings',
+          initial_balance: Number((data as any).initial_balance ?? data.opening_balance ?? 0),
+          opening_date: data.opening_date || new Date().toISOString().slice(0, 10),
+          notes: data.notes || null,
           is_archived: false,
         };
 
@@ -128,9 +146,18 @@ export function useAccounts(options?: UseAccountsOptions): UseAccountsReturn {
 
         toast.success('Account created successfully');
         await fetchAccounts();
-        return created;
+        return {
+          ...created,
+          name: created.account_name || created.name,
+          type: created.account_type || created.type,
+          opening_balance: Number(created.initial_balance ?? created.opening_balance ?? 0),
+          is_active: !created.is_archived,
+        };
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Failed to create account';
+        console.error('Failed to create account:', err);
+        const message =
+          (err as any)?.message ||
+          (err instanceof Error ? err.message : 'Failed to create account');
         toast.error(message);
         return null;
       }
@@ -146,10 +173,33 @@ export function useAccounts(options?: UseAccountsOptions): UseAccountsReturn {
       }
 
       try {
-        const updatePayload: AccountUpdate = {
-          ...data,
+        const updatePayload: any = {
           updated_at: new Date().toISOString(),
         };
+
+        if (data.name !== undefined || (data as any).account_name !== undefined) {
+          updatePayload.account_name = (data as any).account_name || data.name;
+        }
+        if (data.type !== undefined || (data as any).account_type !== undefined) {
+          updatePayload.account_type = (data as any).account_type || data.type;
+        }
+        if (data.opening_balance !== undefined || (data as any).initial_balance !== undefined) {
+          updatePayload.initial_balance = Number((data as any).initial_balance ?? data.opening_balance ?? 0);
+        }
+        if (data.bank_name !== undefined) {
+          updatePayload.bank_name = data.bank_name;
+        }
+        if (data.opening_date !== undefined) {
+          updatePayload.opening_date = data.opening_date;
+        }
+        if (data.notes !== undefined) {
+          updatePayload.notes = data.notes;
+        }
+        if (data.is_archived !== undefined) {
+          updatePayload.is_archived = data.is_archived;
+        } else if (data.is_active !== undefined) {
+          updatePayload.is_archived = !data.is_active;
+        }
 
         const { data: updated, error: updateError } = await supabase
           .from('accounts')
@@ -165,9 +215,18 @@ export function useAccounts(options?: UseAccountsOptions): UseAccountsReturn {
 
         toast.success('Account updated successfully');
         await fetchAccounts();
-        return updated;
+        return {
+          ...updated,
+          name: updated.account_name || updated.name,
+          type: updated.account_type || updated.type,
+          opening_balance: Number(updated.initial_balance ?? updated.opening_balance ?? 0),
+          is_active: !updated.is_archived,
+        };
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Failed to update account';
+        console.error('Failed to update account:', err);
+        const message =
+          (err as any)?.message ||
+          (err instanceof Error ? err.message : 'Failed to update account');
         toast.error(message);
         return null;
       }

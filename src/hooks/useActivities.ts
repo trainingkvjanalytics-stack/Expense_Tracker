@@ -83,7 +83,7 @@ export function useActivities(params?: UseActivitiesParams): UseActivitiesReturn
           .eq('user_id', user.id);
 
         if (typeParam) {
-          query = query.eq('type', typeParam);
+          query = query.eq('transaction_type', typeParam);
         }
 
         if (categoryIdParam) {
@@ -96,7 +96,7 @@ export function useActivities(params?: UseActivitiesParams): UseActivitiesReturn
 
         if (accountIdParam) {
           query = query.or(
-            `account_id.eq.${accountIdParam},to_account_id.eq.${accountIdParam}`
+            `account_id.eq.${accountIdParam},destination_account_id.eq.${accountIdParam}`
           );
         }
 
@@ -111,9 +111,7 @@ export function useActivities(params?: UseActivitiesParams): UseActivitiesReturn
         }
 
         if (searchParam) {
-          query = query.or(
-            `description.ilike.%${searchParam}%,notes.ilike.%${searchParam}%`
-          );
+          query = query.ilike('description', `%${searchParam}%`);
         }
 
         query = query
@@ -132,12 +130,12 @@ export function useActivities(params?: UseActivitiesParams): UseActivitiesReturn
             })
             .eq('user_id', user.id);
 
-          if (typeParam) fallbackQuery = fallbackQuery.eq('type', typeParam);
+          if (typeParam) fallbackQuery = fallbackQuery.eq('transaction_type', typeParam);
           if (categoryIdParam) fallbackQuery = fallbackQuery.eq('category_id', categoryIdParam);
           if (paymentModeParam) fallbackQuery = fallbackQuery.eq('payment_mode', paymentModeParam);
           if (accountIdParam) {
             fallbackQuery = fallbackQuery.or(
-              `account_id.eq.${accountIdParam},to_account_id.eq.${accountIdParam}`
+              `account_id.eq.${accountIdParam},destination_account_id.eq.${accountIdParam}`
             );
           }
           if (params?.dateRange?.from) {
@@ -153,9 +151,7 @@ export function useActivities(params?: UseActivitiesParams): UseActivitiesReturn
             );
           }
           if (searchParam) {
-            fallbackQuery = fallbackQuery.or(
-              `description.ilike.%${searchParam}%,notes.ilike.%${searchParam}%`
-            );
+            fallbackQuery = fallbackQuery.ilike('description', `%${searchParam}%`);
           }
 
           fallbackQuery = fallbackQuery
@@ -174,14 +170,24 @@ export function useActivities(params?: UseActivitiesParams): UseActivitiesReturn
         }
 
         const formattedBatch: TransactionWithDetails[] = (
-          (data as unknown as TransactionWithDetails[]) || []
+          (data as unknown as any[]) || []
         ).map((item) => {
-          if (item.accounts) {
-            const accName = item.accounts.name || item.accounts.account_name || '';
-            item.accounts.name = accName;
-            item.accounts.account_name = accName;
-          }
-          return item;
+          const mappedAcc = item.accounts
+            ? {
+                ...item.accounts,
+                name: item.accounts.account_name || item.accounts.name || '',
+                account_name: item.accounts.account_name || item.accounts.name || '',
+                type: item.accounts.account_type || item.accounts.type,
+                opening_balance: Number(item.accounts.initial_balance ?? item.accounts.opening_balance ?? 0),
+              }
+            : undefined;
+
+          return {
+            ...item,
+            type: item.transaction_type || item.type,
+            to_account_id: item.destination_account_id || item.to_account_id,
+            accounts: mappedAcc,
+          };
         });
 
         setTotalCount(count ?? 0);

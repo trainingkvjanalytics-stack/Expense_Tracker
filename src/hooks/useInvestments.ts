@@ -11,8 +11,6 @@ import type {
   InvestmentMethod,
   InvestmentType,
   PaymentMode,
-  TransactionInsert,
-  TransactionUpdate,
 } from '@/types/database';
 
 export interface InvestmentWithDetails extends Investment {
@@ -80,10 +78,10 @@ export function useInvestments(
         .from('investments')
         .select('*, accounts(*)')
         .eq('user_id', user.id)
-        .order('start_date', { ascending: false });
+        .order('investment_date', { ascending: false });
 
       if (methodParam) {
-        query = query.eq('method', methodParam);
+        query = query.eq('investment_method', methodParam);
       }
 
       if (typeParam) {
@@ -98,7 +96,7 @@ export function useInvestments(
           .from('investments')
           .select('*')
           .eq('user_id', user.id)
-          .order('start_date', { ascending: false });
+          .order('investment_date', { ascending: false });
         data = fallbackRes.data as unknown as typeof data;
         fetchError = fallbackRes.error;
       }
@@ -108,11 +106,25 @@ export function useInvestments(
       }
 
       const allList: InvestmentWithDetails[] = (data || []).map((item: any) => {
-        const inv = item as unknown as InvestmentWithDetails;
-        if (inv.accounts) {
-          const accName = inv.accounts.name || inv.accounts.account_name || '';
-          inv.accounts.name = accName;
-          inv.accounts.account_name = accName;
+        const inv: any = {
+          ...item,
+          name: item.investment_name || item.name || '',
+          investment_name: item.investment_name || item.name || '',
+          method: item.investment_method || item.method || 'sip',
+          investment_method: item.investment_method || item.method || 'sip',
+          type: item.investment_type || item.type || 'mutual_fund',
+          investment_type: item.investment_type || item.type || 'mutual_fund',
+          start_date: item.investment_date || item.start_date || new Date().toISOString().slice(0, 10),
+          investment_date: item.investment_date || item.start_date || new Date().toISOString().slice(0, 10),
+          current_value: Number(item.amount) || 0,
+        };
+        if (item.accounts) {
+          const accName = item.accounts.name || item.accounts.account_name || '';
+          inv.accounts = {
+            ...item.accounts,
+            name: accName,
+            account_name: accName,
+          };
         }
         return inv;
       });
@@ -179,8 +191,10 @@ export function useInvestments(
       setTotalMonthly(round2(monthly));
       setTotalOverall(round2(overall));
     } catch (err: unknown) {
+      console.error('Failed to fetch investments:', err);
       const message =
-        err instanceof Error ? err.message : 'Failed to fetch investments';
+        (err as any)?.message ||
+        (err instanceof Error ? err.message : 'Failed to fetch investments');
       setError(message);
       toast.error(message);
     } finally {
@@ -206,15 +220,16 @@ export function useInvestments(
       }
 
       try {
-        const investmentPayload: InvestmentInsert = {
-          ...data,
+        const investmentPayload: any = {
           user_id: user.id,
+          investment_name: (data as any).investment_name || (data as any).name,
           amount: Number(data.amount) || 0,
-          current_value:
-            data.current_value !== undefined && data.current_value !== null
-              ? Number(data.current_value)
-              : Number(data.amount) || 0,
-          is_active: data.is_active ?? true,
+          investment_method: (data as any).investment_method || (data as any).method || 'sip',
+          investment_type: (data as any).investment_type || (data as any).type || 'mutual_fund',
+          investment_date: (data as any).investment_date || (data as any).start_date || format(new Date(), 'yyyy-MM-dd'),
+          account_id: data.account_id || null,
+          payment_mode: data.payment_mode || 'upi',
+          notes: data.notes || null,
         };
 
         // 1. Insert into investments table
@@ -230,15 +245,14 @@ export function useInvestments(
 
         // 2. If an account is associated, create a matching 'investment' transaction
         if (created.account_id) {
-          const transactionPayload: TransactionInsert = {
+          const transactionPayload: any = {
             user_id: user.id,
             account_id: created.account_id,
-            type: 'investment',
+            transaction_type: 'investment',
             amount: created.amount,
-            transaction_date: created.start_date || format(new Date(), 'yyyy-MM-dd'),
+            transaction_date: created.investment_date || (data as any).start_date || format(new Date(), 'yyyy-MM-dd'),
             payment_mode: data.payment_mode || 'upi',
-            description: `Investment: ${created.name}`,
-            notes: created.notes,
+            description: `Investment: ${created.investment_name || (data as any).name}`,
             related_investment_id: created.id,
           };
 
@@ -253,10 +267,18 @@ export function useInvestments(
 
         toast.success('Investment saved successfully');
         await fetchInvestments();
-        return created;
+        return {
+          ...created,
+          name: created.investment_name || created.name,
+          method: created.investment_method || created.method,
+          type: created.investment_type || created.type,
+          start_date: created.investment_date || created.start_date,
+        };
       } catch (err: unknown) {
+        console.error('Failed to create investment:', err);
         const message =
-          err instanceof Error ? err.message : 'Failed to create investment';
+          (err as any)?.message ||
+          (err instanceof Error ? err.message : 'Failed to create investment');
         toast.error(message);
         return null;
       }
@@ -275,16 +297,33 @@ export function useInvestments(
       }
 
       try {
-        const updatePayload: InvestmentUpdate = {
-          ...data,
+        const updatePayload: any = {
           updated_at: new Date().toISOString(),
         };
 
         if (data.amount !== undefined) {
           updatePayload.amount = Number(data.amount) || 0;
         }
-        if (data.current_value !== undefined && data.current_value !== null) {
-          updatePayload.current_value = Number(data.current_value);
+        if ((data as any).investment_name !== undefined || (data as any).name !== undefined) {
+          updatePayload.investment_name = (data as any).investment_name || (data as any).name;
+        }
+        if ((data as any).investment_method !== undefined || (data as any).method !== undefined) {
+          updatePayload.investment_method = (data as any).investment_method || (data as any).method;
+        }
+        if ((data as any).investment_type !== undefined || (data as any).type !== undefined) {
+          updatePayload.investment_type = (data as any).investment_type || (data as any).type;
+        }
+        if ((data as any).investment_date !== undefined || (data as any).start_date !== undefined) {
+          updatePayload.investment_date = (data as any).investment_date || (data as any).start_date;
+        }
+        if (data.account_id !== undefined) {
+          updatePayload.account_id = data.account_id;
+        }
+        if (data.payment_mode !== undefined) {
+          updatePayload.payment_mode = data.payment_mode;
+        }
+        if (data.notes !== undefined) {
+          updatePayload.notes = data.notes;
         }
 
         // 1. Update investments table
@@ -301,15 +340,19 @@ export function useInvestments(
         }
 
         // 2. Update related transaction if it exists
-        const txUpdate: TransactionUpdate = {
+        const txUpdate: any = {
           updated_at: new Date().toISOString(),
         };
         if (data.amount !== undefined) txUpdate.amount = Number(data.amount) || 0;
-        if (data.name !== undefined) txUpdate.description = `Investment: ${data.name}`;
+        if ((data as any).name !== undefined || (data as any).investment_name !== undefined) {
+          txUpdate.description = `Investment: ${(data as any).investment_name || (data as any).name}`;
+        }
         if (data.account_id !== undefined && data.account_id !== null) {
           txUpdate.account_id = data.account_id;
         }
-        if (data.start_date !== undefined) txUpdate.transaction_date = data.start_date;
+        if ((data as any).start_date !== undefined || (data as any).investment_date !== undefined) {
+          txUpdate.transaction_date = (data as any).investment_date || (data as any).start_date;
+        }
         if (data.payment_mode !== undefined) txUpdate.payment_mode = data.payment_mode;
 
         await supabase
@@ -320,10 +363,18 @@ export function useInvestments(
 
         toast.success('Investment updated successfully');
         await fetchInvestments();
-        return updated;
+        return {
+          ...updated,
+          name: updated.investment_name || updated.name,
+          method: updated.investment_method || updated.method,
+          type: updated.investment_type || updated.type,
+          start_date: updated.investment_date || updated.start_date,
+        };
       } catch (err: unknown) {
+        console.error('Failed to update investment:', err);
         const message =
-          err instanceof Error ? err.message : 'Failed to update investment';
+          (err as any)?.message ||
+          (err instanceof Error ? err.message : 'Failed to update investment');
         toast.error(message);
         return null;
       }

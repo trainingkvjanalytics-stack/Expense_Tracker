@@ -4,7 +4,6 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import type {
   AppSettings,
-  AppSettingsInsert,
   AppSettingsUpdate,
 } from '@/types/database';
 
@@ -21,6 +20,21 @@ export function useAppSettings(): UseAppSettingsReturn {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const formatSettings = (row: any): AppSettings => ({
+    id: row.id,
+    user_id: row.user_id,
+    currency: row.currency_code || 'INR',
+    date_format: 'dd/MM/yyyy',
+    theme: 'system',
+    email_notifications: false,
+    budget_alerts: true,
+    monthly_budget: null,
+    initial_opening_balance: Number(row.initial_opening_balance) || 0,
+    initial_balance_date: row.initial_balance_date,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  });
 
   const fetchSettings = useCallback(async () => {
     if (!user?.id) {
@@ -44,38 +58,33 @@ export function useAppSettings(): UseAppSettingsReturn {
       }
 
       if (data) {
-        setSettings(data);
+        setSettings(formatSettings(data));
       } else {
         // Insert default app settings for user if not yet initialized
-        const defaultSettings: AppSettingsInsert = {
+        const defaultDbPayload = {
           user_id: user.id,
-          currency: 'INR',
-          date_format: 'dd/MM/yyyy',
-          theme: 'system',
-          email_notifications: false,
-          budget_alerts: true,
-          monthly_budget: null,
+          currency_code: 'INR',
           initial_opening_balance: 0,
           initial_balance_date: null,
         };
 
         const { data: created, error: insertError } = await supabase
           .from('app_settings')
-          .insert(defaultSettings)
+          .insert(defaultDbPayload)
           .select()
           .maybeSingle();
 
         if (insertError) {
           console.warn('Could not auto-create app_settings record:', insertError);
           // Still provide fallback object
-          setSettings({
+          setSettings(formatSettings({
             id: '',
-            ...defaultSettings,
+            ...defaultDbPayload,
             created_at: new Date().toISOString(),
             updated_at: null,
-          } as AppSettings);
+          }));
         } else if (created) {
-          setSettings(created);
+          setSettings(formatSettings(created));
         }
       }
     } catch (err: unknown) {
@@ -100,12 +109,21 @@ export function useAppSettings(): UseAppSettingsReturn {
       }
 
       try {
-        const updatePayload: AppSettingsUpdate = {
-          ...data,
+        const updatePayload: Record<string, any> = {
           updated_at: new Date().toISOString(),
         };
 
-        let result: AppSettings | null = null;
+        if (data.currency !== undefined) {
+          updatePayload.currency_code = data.currency;
+        }
+        if (data.initial_opening_balance !== undefined) {
+          updatePayload.initial_opening_balance = data.initial_opening_balance;
+        }
+        if (data.initial_balance_date !== undefined) {
+          updatePayload.initial_balance_date = data.initial_balance_date;
+        }
+
+        let resultRow: any = null;
 
         if (settings?.id) {
           const { data: updated, error: updateError } = await supabase
@@ -119,7 +137,7 @@ export function useAppSettings(): UseAppSettingsReturn {
           if (updateError) {
             throw updateError;
           }
-          result = updated;
+          resultRow = updated;
         } else {
           const { data: created, error: createError } = await supabase
             .from('app_settings')
@@ -133,12 +151,13 @@ export function useAppSettings(): UseAppSettingsReturn {
           if (createError) {
             throw createError;
           }
-          result = created;
+          resultRow = created;
         }
 
         toast.success('Settings updated successfully');
-        setSettings(result);
-        return result;
+        const formatted = formatSettings(resultRow);
+        setSettings(formatted);
+        return formatted;
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : 'Failed to update settings';

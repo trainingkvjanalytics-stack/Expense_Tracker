@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Profile, ProfileInsert, ProfileUpdate } from '@/types/database';
+import type { Profile, ProfileUpdate } from '@/types/database';
 
 export interface UseProfileReturn {
   profile: Profile | null;
@@ -40,14 +40,16 @@ export function useProfile(): UseProfileReturn {
       }
 
       if (data) {
-        setProfile(data);
+        setProfile({
+          ...data,
+          email: user.email || '',
+        });
       } else {
         // Auto-provision profile from auth user metadata if not present
-        const initialProfile: ProfileInsert = {
+        const initialProfile: any = {
           id: user.id,
-          email: user.email || '',
           full_name: (user.user_metadata?.full_name as string) || null,
-          avatar_url: (user.user_metadata?.avatar_url as string) || null,
+          currency_code: 'INR',
         };
 
         const { data: created, error: insertError } = await supabase
@@ -67,12 +69,17 @@ export function useProfile(): UseProfileReturn {
             updated_at: null,
           });
         } else if (created) {
-          setProfile(created);
+          setProfile({
+            ...created,
+            email: user.email || '',
+          });
         }
       }
     } catch (err: unknown) {
+      console.error('Failed to fetch user profile:', err);
       const message =
-        err instanceof Error ? err.message : 'Failed to fetch user profile';
+        (err as any)?.message ||
+        (err instanceof Error ? err.message : 'Failed to fetch user profile');
       setError(message);
       toast.error(message);
     } finally {
@@ -92,18 +99,18 @@ export function useProfile(): UseProfileReturn {
       }
 
       try {
-        const payload: ProfileUpdate = {
-          ...data,
+        const payload: any = {
+          id: user.id,
           updated_at: new Date().toISOString(),
         };
 
+        if (data.full_name !== undefined) {
+          payload.full_name = data.full_name;
+        }
+
         const { data: updated, error: updateError } = await supabase
           .from('profiles')
-          .upsert({
-            id: user.id,
-            email: user.email || '',
-            ...payload,
-          })
+          .upsert(payload)
           .select()
           .single();
 
@@ -112,8 +119,12 @@ export function useProfile(): UseProfileReturn {
         }
 
         toast.success('Profile updated successfully');
-        setProfile(updated);
-        return updated;
+        const finalProfile = {
+          ...updated,
+          email: user.email || '',
+        };
+        setProfile(finalProfile);
+        return finalProfile;
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : 'Failed to update profile';

@@ -91,15 +91,15 @@ export function useTransactions(
         query = query.gte('transaction_date', start).lte('transaction_date', end);
       }
 
-      // Type filter
+      // Type filter (using real DB column transaction_type)
       if (typeParam) {
-        query = query.eq('type', typeParam);
+        query = query.eq('transaction_type', typeParam);
       }
 
-      // Account filter (matches account_id or to_account_id)
+      // Account filter (matches account_id or destination_account_id)
       if (accountIdParam) {
         query = query.or(
-          `account_id.eq.${accountIdParam},to_account_id.eq.${accountIdParam}`
+          `account_id.eq.${accountIdParam},destination_account_id.eq.${accountIdParam}`
         );
       }
 
@@ -135,11 +135,11 @@ export function useTransactions(
             .lte('transaction_date', end);
         }
         if (typeParam) {
-          fallbackQuery = fallbackQuery.eq('type', typeParam);
+          fallbackQuery = fallbackQuery.eq('transaction_type', typeParam);
         }
         if (accountIdParam) {
           fallbackQuery = fallbackQuery.or(
-            `account_id.eq.${accountIdParam},to_account_id.eq.${accountIdParam}`
+            `account_id.eq.${accountIdParam},destination_account_id.eq.${accountIdParam}`
           );
         }
         if (categoryIdParam) {
@@ -162,20 +162,32 @@ export function useTransactions(
       }
 
       const formatted: TransactionWithDetails[] = (
-        (data as unknown as TransactionWithDetails[]) || []
+        (data as unknown as any[]) || []
       ).map((item) => {
-        if (item.accounts) {
-          const name = item.accounts.name || item.accounts.account_name || '';
-          item.accounts.name = name;
-          item.accounts.account_name = name;
-        }
-        return item;
+        const mappedAcc = item.accounts
+          ? {
+              ...item.accounts,
+              name: item.accounts.account_name || item.accounts.name || '',
+              account_name: item.accounts.account_name || item.accounts.name || '',
+              type: item.accounts.account_type || item.accounts.type,
+              opening_balance: Number(item.accounts.initial_balance ?? item.accounts.opening_balance ?? 0),
+            }
+          : undefined;
+
+        return {
+          ...item,
+          type: item.transaction_type || item.type,
+          to_account_id: item.destination_account_id || item.to_account_id,
+          accounts: mappedAcc,
+        };
       });
 
       setTransactions(formatted);
     } catch (err: unknown) {
+      console.error('Failed to fetch transactions:', err);
       const message =
-        err instanceof Error ? err.message : 'Failed to fetch transactions';
+        (err as any)?.message ||
+        (err instanceof Error ? err.message : 'Failed to fetch transactions');
       setError(message);
       toast.error(message);
     } finally {
@@ -190,7 +202,7 @@ export function useTransactions(
 
   const createTransaction = useCallback(
     async (
-      data: Omit<TransactionInsert, 'user_id'> & { user_id?: string }
+      data: Omit<TransactionInsert, 'user_id'> & { user_id?: string; destination_account_id?: string | null; transaction_type?: any }
     ): Promise<Transaction | null> => {
       if (!user?.id) {
         toast.error('You must be logged in to create a transaction');
@@ -198,10 +210,19 @@ export function useTransactions(
       }
 
       try {
-        const payload: TransactionInsert = {
-          ...data,
+        const payload: any = {
           user_id: user.id,
+          transaction_type: data.transaction_type || data.type,
           amount: Number(data.amount) || 0,
+          transaction_date: data.transaction_date || format(new Date(), 'yyyy-MM-dd'),
+          payment_mode: data.payment_mode || 'upi',
+          account_id: data.account_id || null,
+          destination_account_id: data.destination_account_id || data.to_account_id || null,
+          category_id: data.category_id || null,
+          subcategory_id: data.subcategory_id || null,
+          description: data.description || (data as any).notes || null,
+          related_lent_id: data.related_lent_id || null,
+          related_investment_id: data.related_investment_id || null,
         };
 
         const { data: created, error: createError } = await supabase
@@ -218,8 +239,10 @@ export function useTransactions(
         await fetchTransactions();
         return created;
       } catch (err: unknown) {
+        console.error('Failed to save transaction:', err);
         const message =
-          err instanceof Error ? err.message : 'Failed to save transaction';
+          (err as any)?.message ||
+          (err instanceof Error ? err.message : 'Failed to save transaction');
         toast.error(message);
         return null;
       }
@@ -230,7 +253,7 @@ export function useTransactions(
   const updateTransaction = useCallback(
     async (
       id: string,
-      data: TransactionUpdate
+      data: TransactionUpdate & { destination_account_id?: string | null; transaction_type?: any }
     ): Promise<Transaction | null> => {
       if (!user?.id) {
         toast.error('You must be logged in to update a transaction');
@@ -238,13 +261,36 @@ export function useTransactions(
       }
 
       try {
-        const payload: TransactionUpdate = {
-          ...data,
+        const payload: any = {
           updated_at: new Date().toISOString(),
         };
 
+        if (data.type !== undefined || data.transaction_type !== undefined) {
+          payload.transaction_type = data.transaction_type || data.type;
+        }
         if (data.amount !== undefined) {
           payload.amount = Number(data.amount) || 0;
+        }
+        if (data.transaction_date !== undefined) {
+          payload.transaction_date = data.transaction_date;
+        }
+        if (data.payment_mode !== undefined) {
+          payload.payment_mode = data.payment_mode;
+        }
+        if (data.account_id !== undefined) {
+          payload.account_id = data.account_id;
+        }
+        if (data.destination_account_id !== undefined || data.to_account_id !== undefined) {
+          payload.destination_account_id = data.destination_account_id || data.to_account_id;
+        }
+        if (data.category_id !== undefined) {
+          payload.category_id = data.category_id;
+        }
+        if (data.subcategory_id !== undefined) {
+          payload.subcategory_id = data.subcategory_id;
+        }
+        if (data.description !== undefined || (data as any).notes !== undefined) {
+          payload.description = data.description || (data as any).notes;
         }
 
         const { data: updated, error: updateError } = await supabase
@@ -263,8 +309,10 @@ export function useTransactions(
         await fetchTransactions();
         return updated;
       } catch (err: unknown) {
+        console.error('Failed to update transaction:', err);
         const message =
-          err instanceof Error ? err.message : 'Failed to update transaction';
+          (err as any)?.message ||
+          (err instanceof Error ? err.message : 'Failed to update transaction');
         toast.error(message);
         return null;
       }
