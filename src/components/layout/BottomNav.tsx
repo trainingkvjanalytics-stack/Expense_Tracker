@@ -11,6 +11,7 @@ import {
   Tags,
   Settings,
   X,
+  CreditCard,
 } from 'lucide-react';
 import {
   Sheet,
@@ -34,6 +35,7 @@ const mainNavItems: NavItem[] = [
 ];
 
 const moreNavItems: NavItem[] = [
+  { label: 'EMI & Loan', path: '/emi-loan', icon: CreditCard },
   { label: 'Lent Money', path: '/lent-money', icon: HandCoins },
   { label: 'Bank Accounts', path: '/accounts', icon: Landmark },
   { label: 'Categories', path: '/categories', icon: Tags },

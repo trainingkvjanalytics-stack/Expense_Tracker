@@ -15,6 +15,7 @@ import AccountsPage from '@/pages/AccountsPage';
 import CategoriesPage from '@/pages/CategoriesPage';
 import SettingsPage from '@/pages/SettingsPage';
 import TransactionFormPage from '@/pages/TransactionFormPage';
+import EmiLoanPage from '@/pages/EmiLoanPage';
 
 export function App() {
   return (
@@ -65,6 +66,14 @@ export function App() {
             element={
               <AppLayout>
                 <LentMoneyPage />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/emi-loan"
+            element={
+              <AppLayout>
+                <EmiLoanPage />
               </AppLayout>
             }
           />

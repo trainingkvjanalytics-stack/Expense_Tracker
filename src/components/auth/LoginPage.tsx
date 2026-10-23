@@ -25,7 +25,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export const LoginPage: React.FC = () => {
-  const { signIn } = useAuth();
+  const { signIn, signInAsDemo } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -165,6 +165,18 @@ export const LoginPage: React.FC = () => {
               ) : (
                 'Sign In'
               )}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                signInAsDemo();
+                navigate('/emi-loan');
+              }}
+              className="w-full h-10 font-semibold border-primary/30 text-primary hover:bg-primary/5"
+            >
+              🚀 Quick Demo Access (Instant Sign In)
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">

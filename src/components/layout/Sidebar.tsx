@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Wallet,
   PlusCircle,
+  CreditCard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ const mainNavItems: SidebarItem[] = [
 ];
 
 const financeNavItems: SidebarItem[] = [
+  { label: 'EMI & Loan', path: '/emi-loan', icon: CreditCard },
   { label: 'Lent Money', path: '/lent-money', icon: HandCoins },
   { label: 'Bank Accounts', path: '/accounts', icon: Landmark },
   { label: 'Categories', path: '/categories', icon: Tags },

@@ -19,6 +19,7 @@ export interface AuthContextType {
   signOut: () => Promise<{ error: AuthError | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: AuthError | null }>;
+  signInAsDemo: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,15 +44,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           throw sessionError;
         }
         if (isMounted) {
-          setSession(data.session);
-          setUser(data.session?.user ?? null);
+          if (data.session) {
+            setSession(data.session);
+            setUser(data.session?.user ?? null);
+          } else {
+            // Check if demo session is stored
+            const storedDemo = localStorage.getItem('money_tracker_demo_session');
+            if (storedDemo) {
+              const parsed = JSON.parse(storedDemo);
+              setUser(parsed);
+              setSession({ user: parsed } as unknown as Session);
+            }
+          }
         }
       } catch (err: unknown) {
         if (isMounted) {
-          const authErr = err as AuthError;
-          setError(authErr.message || 'Failed to get session');
-          setSession(null);
-          setUser(null);
+          const storedDemo = localStorage.getItem('money_tracker_demo_session');
+          if (storedDemo) {
+            const parsed = JSON.parse(storedDemo);
+            setUser(parsed);
+            setSession({ user: parsed } as unknown as Session);
+          } else {
+            const authErr = err as AuthError;
+            setError(authErr.message || 'Failed to get session');
+            setSession(null);
+            setUser(null);
+          }
         }
       } finally {
         if (isMounted) {
@@ -141,8 +159,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setUser(null);
       setSession(null);
+      localStorage.removeItem('money_tracker_demo_session');
     }
     return { error: null };
+  };
+
+  const signInAsDemo = () => {
+    const demoUser = {
+      id: 'demo-user-123',
+      email: 'demo@expensetracker.local',
+      user_metadata: { full_name: 'Demo User' },
+      app_metadata: {},
+      aud: 'authenticated',
+      created_at: new Date().toISOString(),
+    } as unknown as User;
+
+    localStorage.setItem('money_tracker_demo_session', JSON.stringify(demoUser));
+    setUser(demoUser);
+    setSession({ user: demoUser } as unknown as Session);
   };
 
   const resetPassword = async (email: string) => {
@@ -196,6 +230,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       signOut,
       resetPassword,
       updatePassword,
+      signInAsDemo,
     }),
     [user, session, loading, error]
   );

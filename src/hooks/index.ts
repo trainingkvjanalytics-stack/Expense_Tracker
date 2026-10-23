@@ -8,3 +8,4 @@ export * from './useActivities';
 export * from './useCalendar';
 export * from './useAppSettings';
 export * from './useProfile';
+export * from './useLoans';
