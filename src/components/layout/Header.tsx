@@ -69,13 +69,18 @@ export const Header: React.FC<HeaderProps> = ({ selectedMonth, onMonthChange }) 
   return (
     <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between bg-primary px-3 text-primary-foreground shadow-sm transition-all sm:px-5">
       {/* App branding */}
-      <div className="flex min-w-0 items-center gap-2">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/15 text-primary-foreground">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#122641] text-[#C5A565] shadow-xs ring-1 ring-[#C5A565]/30">
           <Wallet className="h-4 w-4" />
         </div>
-        <span className="truncate text-base font-bold tracking-tight text-white sm:text-lg">
-          My Money Tracker
-        </span>
+        <div className="flex items-baseline gap-1.5 overflow-hidden">
+          <span className="truncate text-base font-bold tracking-tight text-white sm:text-lg">
+            Finora
+          </span>
+          <span className="hidden sm:inline text-[10px] font-semibold text-[#C5A565] uppercase tracking-wider">
+            Wealth Manager
+          </span>
+        </div>
       </div>
 
       {/* Center: Selected Month Navigation */}

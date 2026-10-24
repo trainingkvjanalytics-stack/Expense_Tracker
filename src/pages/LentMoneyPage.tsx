@@ -410,7 +410,7 @@ export const LentMoneyPage: React.FC = () => {
 
                         <div className="flex justify-between text-xs text-muted-foreground">
                           <span>Original: {formatCurrency(record.amount)}</span>
-                          <span>Repaid: {formatCurrency(record.amount_repaid)}</span>
+                          <span>Repaid: <strong className="text-[#287A55] dark:text-emerald-400">{formatCurrency(record.amount_repaid)}</strong></span>
                         </div>
 
                         {/* Progress Bar */}

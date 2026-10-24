@@ -125,7 +125,7 @@ export const EmiLoanPage: React.FC = () => {
               <TrendingDown className="h-4 w-4" />
             </div>
           </div>
-          <div className="mt-2 text-xl sm:text-2xl font-bold text-primary tracking-tight">
+          <div className="mt-2 text-xl sm:text-2xl font-bold text-[#B94F4F] dark:text-rose-400 tracking-tight">
             {formatCurrency(summaryMetrics.totalOutstandingBalance)}
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">
@@ -141,7 +141,7 @@ export const EmiLoanPage: React.FC = () => {
               <Clock className="h-4 w-4" />
             </div>
           </div>
-          <div className="mt-2 text-xl sm:text-2xl font-bold text-foreground tracking-tight">
+          <div className="mt-2 text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400 tracking-tight">
             {formatCurrency(summaryMetrics.totalMonthlyCommitment)}
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">
@@ -169,11 +169,11 @@ export const EmiLoanPage: React.FC = () => {
         <Card className="p-4 bg-gradient-to-br from-card via-card to-emerald-500/[0.04] border-border shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">Total Amount Paid</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-[#287A55] dark:text-emerald-400">
               <CheckCircle2 className="h-4 w-4" />
             </div>
           </div>
-          <div className="mt-2 text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">
+          <div className="mt-2 text-xl sm:text-2xl font-bold text-[#287A55] dark:text-emerald-400 tracking-tight">
             {formatCurrency(summaryMetrics.totalPaidAmount)}
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">
@@ -348,13 +348,13 @@ export const EmiLoanPage: React.FC = () => {
                   <div className="space-y-1.5 pt-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">Principal Paid</span>
-                      <span className="font-semibold text-foreground">
+                      <span className="font-semibold text-[#287A55] dark:text-emerald-400">
                         {percentPaid}% ({formatCurrency(loan.principal_amount - scheduleInfo.currentBalance)})
                       </span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                       <div
-                        className="h-full bg-primary transition-all duration-500 rounded-full"
+                        className="h-full bg-emerald-600 dark:bg-emerald-500 transition-all duration-500 rounded-full"
                         style={{ width: `${percentPaid}%` }}
                       />
                     </div>
@@ -366,7 +366,7 @@ export const EmiLoanPage: React.FC = () => {
                       <span className="text-[10px] text-muted-foreground block">
                         Remaining Principal
                       </span>
-                      <span className="text-xs font-bold text-foreground">
+                      <span className="text-xs font-bold text-[#B94F4F] dark:text-rose-400">
                         {formatCurrency(scheduleInfo.currentBalance)}
                       </span>
                     </div>

@@ -2,78 +2,119 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    /* App Background — Warm Ivory #F7F5EF */
+    --background: 45 33% 95%;
+    /* Primary Text — #1C2E43 */
+    --foreground: 212 41% 19%;
 
+    /* Card Background — #FFFFFF */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 212 41% 19%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 212 41% 19%;
 
-    /* Deep navy / dark teal primary */
-    --primary: 199 89% 26%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary — Royal Sapphire #17345C */
+    --primary: 215 60% 23%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 204 33% 94%;
-    --secondary-foreground: 200 50% 20%;
+    --secondary: 45 20% 90%;
+    --secondary-foreground: 212 41% 19%;
 
-    --muted: 210 30% 95%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 45 20% 91%;
+    /* Secondary Text — #718096 */
+    --muted-foreground: 216 14% 52%;
 
-    --accent: 195 45% 93%;
-    --accent-foreground: 199 89% 26%;
+    /* Accent — Champagne Gold #C5A565 */
+    --accent: 40 48% 58%;
+    --accent-foreground: 215 60% 23%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --gold: 40 48% 58%;
+    --gold-foreground: 215 60% 23%;
+    --bronze: 38 72% 38%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 199 89% 26%;
+    /* Sidebar — Midnight Navy #122641 and custom states */
+    --sidebar-bg: 214 57% 16%;
+    --sidebar-foreground: 213 30% 87%;
+    --sidebar-muted: 213 24% 65%;
+    --sidebar-border: 213 48% 22%;
+    --sidebar-hover: 215 50% 25%;
+    --sidebar-active: 213 46% 30%;
+    --sidebar-active-foreground: 0 0% 100%;
+    --sidebar-active-icon: 42 61% 72%;
+    --sidebar-icon: 214 26% 81%;
+    --sidebar-card: 213 48% 22%;
+    --sidebar-gold: 40 48% 58%;
 
-    --chart-1: 199 89% 36%;
-    --chart-2: 168 76% 36%;
-    --chart-3: 215 70% 45%;
-    --chart-4: 38 92% 50%;
-    --chart-5: 12 85% 58%;
+    --destructive: 0 43% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Border — Warm Stone #E6E0D5 */
+    --border: 39 26% 87%;
+    --input: 39 26% 87%;
+    --ring: 215 60% 23%;
+
+    /* Charts — Financial data palette */
+    --chart-1: 215 60% 23%; /* Royal Sapphire */
+    --chart-2: 40 48% 58%;  /* Champagne Gold */
+    --chart-3: 154 51% 32%; /* Income Green #287A55 */
+    --chart-4: 214 53% 46%; /* Investment Blue #376DB5 */
+    --chart-5: 0 43% 52%;   /* Expense Red #B94F4F */
 
     --radius: 0.625rem;
   }
 
   .dark {
-    --background: 222 47% 8%;
-    --foreground: 210 40% 98%;
+    --background: 215 55% 10%;
+    --foreground: 213 30% 92%;
 
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
+    --card: 215 50% 14%;
+    --card-foreground: 213 30% 95%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 215 50% 14%;
+    --popover-foreground: 213 30% 95%;
 
-    --primary: 187 80% 42%;
-    --primary-foreground: 222 47% 10%;
+    --primary: 214 53% 48%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 215 40% 20%;
+    --secondary-foreground: 213 30% 92%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 215 40% 18%;
+    --muted-foreground: 215 15% 65%;
 
-    --accent: 217.2 32.6% 20%;
-    --accent-foreground: 187 80% 45%;
+    --accent: 40 48% 30%;
+    --accent-foreground: 40 48% 70%;
 
-    --destructive: 0 62.8% 45%;
-    --destructive-foreground: 210 40% 98%;
+    --gold: 40 50% 65%;
+    --gold-foreground: 215 60% 15%;
+    --bronze: 38 72% 50%;
 
-    --border: 217.2 32.6% 20%;
-    --input: 217.2 32.6% 20%;
-    --ring: 187 80% 42%;
+    /* Dark Midnight Navy Sidebar */
+    --sidebar-bg: 215 60% 10%;
+    --sidebar-foreground: 213 30% 87%;
+    --sidebar-muted: 213 24% 65%;
+    --sidebar-border: 215 45% 18%;
+    --sidebar-hover: 215 45% 20%;
+    --sidebar-active: 213 46% 28%;
+    --sidebar-active-foreground: 0 0% 100%;
+    --sidebar-active-icon: 42 61% 72%;
+    --sidebar-icon: 214 26% 81%;
+    --sidebar-card: 215 45% 18%;
+    --sidebar-gold: 40 48% 58%;
 
-    --chart-1: 187 80% 45%;
-    --chart-2: 160 65% 45%;
-    --chart-3: 215 75% 60%;
-    --chart-4: 38 92% 55%;
-    --chart-5: 12 85% 62%;
+    --destructive: 0 50% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 45% 22%;
+    --input: 215 45% 22%;
+    --ring: 214 53% 48%;
+
+    --chart-1: 214 53% 55%;
+    --chart-2: 40 55% 65%;
+    --chart-3: 154 51% 45%;
+    --chart-4: 214 60% 60%;
+    --chart-5: 0 50% 60%;
   }
 }
 
@@ -98,6 +139,22 @@
 
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-gold: hsl(var(--gold));
+  --color-gold-foreground: hsl(var(--gold-foreground));
+  --color-bronze: hsl(var(--bronze));
+
+  --color-sidebar: hsl(var(--sidebar-bg));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-muted: hsl(var(--sidebar-muted));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-hover: hsl(var(--sidebar-hover));
+  --color-sidebar-active: hsl(var(--sidebar-active));
+  --color-sidebar-active-foreground: hsl(var(--sidebar-active-foreground));
+  --color-sidebar-active-icon: hsl(var(--sidebar-active-icon));
+  --color-sidebar-icon: hsl(var(--sidebar-icon));
+  --color-sidebar-card: hsl(var(--sidebar-card));
+  --color-sidebar-gold: hsl(var(--sidebar-gold));
 
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));

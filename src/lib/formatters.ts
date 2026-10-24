@@ -94,25 +94,65 @@ export function formatRelativeDate(date: string | Date | null | undefined): stri
 }
 
 /**
- * Get Tailwind CSS color class for transaction types.
+ * Get Tailwind CSS color class for transaction types and financial amounts.
+ * Income / Positive: #287A55 (Green)
+ * Expense / Negative: #B94F4F (Red)
  */
 export function getTransactionTypeColor(type: TransactionType): string {
   switch (type) {
     case 'income':
-      return 'text-emerald-600 dark:text-emerald-400';
+      return 'text-[#287A55] dark:text-emerald-400';
     case 'expense':
-      return 'text-rose-600 dark:text-rose-400';
+      return 'text-[#B94F4F] dark:text-rose-400';
     case 'investment':
-      return 'text-purple-600 dark:text-purple-400';
+      return 'text-[#376DB5] dark:text-blue-400';
     case 'lent':
-      return 'text-amber-600 dark:text-amber-400';
+      return 'text-[#A8751B] dark:text-amber-400';
     case 'repayment':
-      return 'text-blue-600 dark:text-blue-400';
+      return 'text-[#287A55] dark:text-emerald-400';
     case 'transfer':
-      return 'text-slate-600 dark:text-slate-400';
+      return 'text-[#66758A] dark:text-slate-400';
     default:
       return 'text-foreground';
   }
+}
+
+/**
+ * Get background pill & badge styling for transaction types.
+ */
+export function getTransactionTypeBadgeColor(type: TransactionType): string {
+  switch (type) {
+    case 'income':
+      return 'bg-[#E7F3EB] text-[#287A55] border-[#287A55]/30 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800';
+    case 'expense':
+      return 'bg-[#F9EAEA] text-[#B94F4F] border-[#B94F4F]/30 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800';
+    case 'investment':
+      return 'bg-[#EAF1FC] text-[#376DB5] border-[#376DB5]/30 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800';
+    case 'lent':
+      return 'bg-[#FBF1DB] text-[#A8751B] border-[#A8751B]/30 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800';
+    case 'repayment':
+      return 'bg-[#E7F3EB] text-[#287A55] border-[#287A55]/30 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800';
+    case 'transfer':
+      return 'bg-[#EDF0F4] text-[#66758A] border-[#66758A]/30 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-800';
+    default:
+      return 'bg-muted text-muted-foreground border-border';
+  }
+}
+
+/**
+ * Get color class for balance/numeric values: green for positive, red for negative.
+ */
+export function getAmountColor(amount: number | null | undefined): string {
+  if (amount === null || amount === undefined || Number.isNaN(amount)) {
+    return 'text-foreground';
+  }
+  if (amount > 0) {
+    return 'text-[#287A55] dark:text-emerald-400';
+  }
+  if (amount < 0) {
+    return 'text-[#B94F4F] dark:text-rose-400';
+  }
+  return 'text-foreground';
 }
 
 /**

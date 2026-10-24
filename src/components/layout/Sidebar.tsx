@@ -53,7 +53,7 @@ export const Sidebar: React.FC = () => {
   const renderNavGroup = (title: string, items: SidebarItem[]) => (
     <div className="py-2">
       {!collapsed && (
-        <h4 className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+        <h4 className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-[#8FA2BA]">
           {title}
         </h4>
       )}
@@ -73,14 +73,19 @@ export const Sidebar: React.FC = () => {
                 onClick={() => navigate(item.path)}
                 title={collapsed ? item.label : undefined}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150',
                   isActive
-                    ? 'bg-primary text-primary-foreground shadow-xs'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                    ? 'bg-[#29496F] text-[#FFFFFF] font-semibold shadow-xs'
+                    : 'text-[#D3DCE7] hover:bg-[#203B60] hover:text-[#FFFFFF]',
                   collapsed && 'justify-center px-2'
                 )}
               >
-                <Icon className="h-4 w-4 shrink-0" />
+                <Icon
+                  className={cn(
+                    'h-4 w-4 shrink-0 transition-colors',
+                    isActive ? 'text-[#E3C98E]' : 'text-[#C1CCDA]'
+                  )}
+                />
                 {!collapsed && <span className="truncate">{item.label}</span>}
               </button>
             </li>
@@ -93,24 +98,29 @@ export const Sidebar: React.FC = () => {
   return (
     <aside
       className={cn(
-        'hidden lg:flex h-screen flex-col border-r border-border bg-card transition-all duration-300 select-none sticky top-0',
+        'hidden lg:flex h-screen flex-col border-r border-[#1D3552] bg-[#122641] text-[#D3DCE7] shadow-xl transition-all duration-300 select-none sticky top-0',
         collapsed ? 'w-16' : 'w-60'
       )}
     >
       {/* Sidebar Header */}
-      <div className="flex h-14 items-center justify-between border-b border-border px-3">
+      <div className="flex h-14 items-center justify-between border-b border-[#1D3552] px-3">
         {!collapsed && (
-          <div className="flex items-center gap-2 overflow-hidden">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#17345C] text-[#C5A565] shadow-xs ring-1 ring-[#C5A565]/40">
               <Wallet className="h-4 w-4" />
             </div>
-            <span className="truncate text-base font-bold text-foreground">
-              Money Tracker
-            </span>
+            <div className="flex flex-col overflow-hidden text-left">
+              <span className="truncate text-sm font-bold text-white tracking-wide">
+                Finora
+              </span>
+              <span className="text-[9px] font-semibold text-[#C5A565] uppercase tracking-wider">
+                Wealth Manager
+              </span>
+            </div>
           </div>
         )}
         {collapsed && (
-          <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs">
+          <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-[#17345C] text-[#C5A565] shadow-xs ring-1 ring-[#C5A565]/40">
             <Wallet className="h-4 w-4" />
           </div>
         )}
@@ -118,13 +128,13 @@ export const Sidebar: React.FC = () => {
 
       {/* Navigation List */}
       <div className="flex-1 overflow-y-auto px-2 py-3 space-y-2">
-        {renderNavGroup('Overview', mainNavItems)}
+        {renderNavGroup('Workspace', mainNavItems)}
         {renderNavGroup('Manage', financeNavItems)}
         {renderNavGroup('Shortcuts', transactionShortcuts)}
       </div>
 
-      {/* Settings & Collapse Toggle Footer */}
-      <div className="border-t border-border p-2 space-y-1">
+      {/* Sidebar Footer Card (#1D3552) */}
+      <div className="border-t border-[#1D3552] bg-[#1D3552]/40 p-2 space-y-1">
         <button
           type="button"
           onClick={() => navigate('/settings')}
@@ -132,12 +142,17 @@ export const Sidebar: React.FC = () => {
           className={cn(
             'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
             location.pathname === '/settings'
-              ? 'bg-primary text-primary-foreground'
-              : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+              ? 'bg-[#29496F] text-[#FFFFFF] font-semibold'
+              : 'text-[#D3DCE7] hover:bg-[#203B60] hover:text-[#FFFFFF]',
             collapsed && 'justify-center px-2'
           )}
         >
-          <Settings className="h-4 w-4 shrink-0" />
+          <Settings
+            className={cn(
+              'h-4 w-4 shrink-0 transition-colors',
+              location.pathname === '/settings' ? 'text-[#E3C98E]' : 'text-[#C1CCDA]'
+            )}
+          />
           {!collapsed && <span>Settings</span>}
         </button>
 
@@ -147,7 +162,7 @@ export const Sidebar: React.FC = () => {
           type="button"
           onClick={() => setCollapsed(!collapsed)}
           className={cn(
-            'w-full text-muted-foreground hover:text-foreground justify-center h-8',
+            'w-full text-[#8FA2BA] hover:text-[#FFFFFF] hover:bg-[#203B60] justify-center h-8',
             !collapsed && 'justify-between'
           )}
         >

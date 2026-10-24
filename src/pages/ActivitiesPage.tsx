@@ -49,11 +49,13 @@ import { useActivities } from '@/hooks/useActivities';
 import { useTransactions, type TransactionWithDetails } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
 import { useAccounts } from '@/hooks/useAccounts';
+import { cn } from '@/lib/utils';
 import {
   formatCurrency,
   formatDate,
   formatRelativeDate,
   getTransactionTypeColor,
+  getTransactionTypeBadgeColor,
   getTransactionTypeLabel,
 } from '@/lib/formatters';
 import type { TransactionType, PaymentMode } from '@/types/database';
@@ -347,7 +349,20 @@ export const ActivitiesPage: React.FC = () => {
                       className="p-3.5 flex items-center justify-between hover:bg-muted/40 cursor-pointer transition-colors"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted/80">
+                        <div
+                          className={cn(
+                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors',
+                            txn.type === 'income'
+                              ? 'bg-[#E7F3EB] text-[#287A55] dark:bg-emerald-950/50 dark:text-emerald-400'
+                              : txn.type === 'expense'
+                              ? 'bg-[#F9EAEA] text-[#B94F4F] dark:bg-rose-950/50 dark:text-rose-400'
+                              : txn.type === 'investment'
+                              ? 'bg-[#EAF1FC] text-[#376DB5] dark:bg-blue-950/50 dark:text-blue-400'
+                              : txn.type === 'lent'
+                              ? 'bg-[#FBF1DB] text-[#A8751B] dark:bg-amber-950/50 dark:text-amber-400'
+                              : 'bg-muted/80 text-foreground'
+                          )}
+                        >
                           {getActivityIcon(txn.type)}
                         </div>
                         <div className="min-w-0">
@@ -374,11 +389,17 @@ export const ActivitiesPage: React.FC = () => {
                       </div>
 
                       <div className="text-right shrink-0 ml-3">
-                        <p className={`text-sm font-bold ${colorClass}`}>
+                        <p className={cn('text-base font-bold tracking-tight', colorClass)}>
                           {isPositive ? '+' : '-'}
                           {formatCurrency(txn.amount)}
                         </p>
-                        <Badge variant="outline" className="text-[10px] uppercase font-bold py-0 px-1.5">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            'text-[10px] uppercase font-bold py-0.5 px-2 mt-0.5 border shadow-2xs',
+                            getTransactionTypeBadgeColor(txn.type)
+                          )}
+                        >
                           {txn.type}
                         </Badge>
                       </div>
@@ -421,12 +442,23 @@ export const ActivitiesPage: React.FC = () => {
 
           {selectedTxn && (
             <div className="space-y-3 pt-2 text-sm">
-              <div className="flex justify-between py-1.5 border-b border-border/60">
-                <span className="text-muted-foreground">Amount</span>
-                <span className={`text-base font-bold ${getTransactionTypeColor(selectedTxn.type)}`}>
-                  {selectedTxn.type === 'income' || selectedTxn.type === 'repayment' ? '+' : '-'}
-                  {formatCurrency(selectedTxn.amount)}
-                </span>
+              <div className="flex justify-between items-center py-2 border-b border-border/60">
+                <span className="text-muted-foreground font-medium">Amount</span>
+                <div className="flex items-center gap-2">
+                  <span className={cn('text-lg font-extrabold', getTransactionTypeColor(selectedTxn.type))}>
+                    {selectedTxn.type === 'income' || selectedTxn.type === 'repayment' ? '+' : '-'}
+                    {formatCurrency(selectedTxn.amount)}
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      'text-[10px] uppercase font-bold py-0.5 px-2 border',
+                      getTransactionTypeBadgeColor(selectedTxn.type)
+                    )}
+                  >
+                    {selectedTxn.type}
+                  </Badge>
+                </div>
               </div>
               <div className="flex justify-between py-1.5 border-b border-border/60">
                 <span className="text-muted-foreground">Description</span>

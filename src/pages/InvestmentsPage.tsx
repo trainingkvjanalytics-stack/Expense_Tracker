@@ -389,7 +389,7 @@ export const InvestmentsPage: React.FC = () => {
                   {inv.current_value && inv.current_value !== inv.amount && (
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>Holding Value:</span>
-                      <span className="font-semibold text-foreground">
+                      <span className={`font-semibold ${inv.current_value >= inv.amount ? 'text-[#287A55] dark:text-emerald-400' : 'text-[#B94F4F] dark:text-rose-400'}`}>
                         {formatCurrency(inv.current_value)}
                       </span>
                     </div>

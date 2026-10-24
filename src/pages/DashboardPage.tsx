@@ -661,13 +661,13 @@ export const DashboardPage: React.FC = () => {
               <TrendingUp className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-lg sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+          <div className="text-lg sm:text-2xl font-bold text-[#287A55] dark:text-emerald-400">
             {formatCurrency(displaySummary.totalIncome)}
           </div>
           <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
             <span>{isThisMonth ? 'This month' : 'In selected range'}</span>
             {displaySummary.totalRepayments > 0 && (
-              <span className="text-blue-600 dark:text-blue-400">
+              <span className="text-[#287A55] dark:text-emerald-400 font-semibold">
                 +{formatCurrency(displaySummary.totalRepayments)} repaid
               </span>
             )}
@@ -680,11 +680,11 @@ export const DashboardPage: React.FC = () => {
             <span className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
               Total Expenses
             </span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10 text-[#B94F4F] dark:text-rose-400">
               <TrendingDown className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-lg sm:text-2xl font-bold text-rose-600 dark:text-rose-400">
+          <div className="text-lg sm:text-2xl font-bold text-[#B94F4F] dark:text-rose-400">
             {formatCurrency(displaySummary.totalExpenses)}
           </div>
           <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
@@ -706,8 +706,8 @@ export const DashboardPage: React.FC = () => {
           <div
             className={`text-lg sm:text-2xl font-bold ${
               displaySummary.remainingBalance >= 0
-                ? 'text-foreground'
-                : 'text-rose-600 dark:text-rose-400'
+                ? 'text-[#287A55] dark:text-emerald-400'
+                : 'text-[#B94F4F] dark:text-rose-400'
             }`}
           >
             {formatCurrency(displaySummary.remainingBalance)}
@@ -804,7 +804,13 @@ export const DashboardPage: React.FC = () => {
               )}
               <span className="text-muted-foreground">
                 Closing Rollover:{' '}
-                <strong className="text-foreground">
+                <strong
+                  className={
+                    displaySummary.closingBalance >= 0
+                      ? 'text-[#287A55] dark:text-emerald-400'
+                      : 'text-[#B94F4F] dark:text-rose-400'
+                  }
+                >
                   {formatCurrency(displaySummary.closingBalance)}
                 </strong>
               </span>
@@ -1091,7 +1097,7 @@ export const DashboardPage: React.FC = () => {
                     <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                       Total Expense
                     </span>
-                    <span className="text-sm sm:text-base font-extrabold text-foreground px-2">
+                    <span className="text-sm sm:text-base font-extrabold text-[#B94F4F] dark:text-rose-400 px-2">
                       {formatCurrency(totalExpenseAmount, { showDecimals: false })}
                     </span>
                   </div>
@@ -1116,7 +1122,7 @@ export const DashboardPage: React.FC = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-2 shrink-0 ml-2">
-                        <span className="text-xs font-bold text-foreground">
+                        <span className="text-xs font-bold text-[#B94F4F] dark:text-rose-400">
                           {formatCurrency(cat.amount, { showDecimals: false })}
                         </span>
                         <span className="text-[10px] font-medium text-muted-foreground w-8 text-right">

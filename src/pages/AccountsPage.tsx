@@ -309,7 +309,7 @@ export const AccountsPage: React.FC = () => {
               <Wallet className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-foreground">
+          <div className={`text-2xl sm:text-3xl font-extrabold ${totalBalance >= 0 ? 'text-[#287A55] dark:text-emerald-400' : 'text-[#B94F4F] dark:text-rose-400'}`}>
             {formatCurrency(totalBalance)}
           </div>
           <p className="text-[11px] text-muted-foreground mt-1">
@@ -410,7 +410,7 @@ export const AccountsPage: React.FC = () => {
                     <span className="text-[11px] font-medium text-muted-foreground">
                       Current Calculated Balance
                     </span>
-                    <p className="text-xl sm:text-2xl font-extrabold text-foreground">
+                    <p className={`text-xl sm:text-2xl font-extrabold ${acc.current_balance >= 0 ? 'text-[#287A55] dark:text-emerald-400' : 'text-[#B94F4F] dark:text-rose-400'}`}>
                       {formatCurrency(acc.current_balance)}
                     </p>
                     <div className="flex justify-between text-[11px] text-muted-foreground pt-1">
